@@ -1,0 +1,92 @@
+---
+title: "day 1"
+author: "Brenna Kelly"
+date: "2023-07-24"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(rje)
+```
+
+# Robins Manski Bounds
+
+```{r}
+# estimate bounds based on observed data
+# imputing worst-case and best-case scenarios
+
+# Upper
+# E[Y(0) | X = 0]
+# avg outcome in controls
+ey0_x0 <- 500 / 600
+
+# Pr[x = 0]
+pr_x0 <- 600 / 2000
+
+# Pr[x = 1]
+pr_x1 <- 1400 / 2000
+
+# E[Y(1) | X = 1]
+ey1_x1 <- 500 / 1400
+
+res <- ey0_x0*pr_x0 + pr_x1 - ey1_x1*pr_x1
+print("upper bound: ")
+print(res)
+
+# Lower
+res - 1
+```
+
+
+# Propensity Score Estimates
+
+```{r}
+n <- 1000000
+z <- rbinom(n,1,.5)
+pz <- .5+.25*z
+x <- rbinom(n,1,pz)
+#Example in R
+# sample size
+# binary covariate
+# propensity score
+# exposure/treatment
+y0 <- 3+3*z+rnorm(n,0,1); y1 <- y0 + 1          # potential outcomes
+yobs <- y0*(1-x)+y1*x                           # observed outcomes
+# naive estimator
+acehat <- mean(yobs[x==0]) - mean(yobs[x==1])
+# stratified estimator
+ace.str0 <- mean(yobs[x==0 & pz==0.5]) - mean(yobs[x==1 & pz==0.5])
+ace.str1 <- mean(yobs[x==0 & pz==0.75]) - mean(yobs[x==1 & pz==0.75])
+ace.str <- ace.str0*mean(pz==0.5)+ace.str1*mean(pz==.75)
+# ipw estimator
+ace.ipw <- mean((1-x)*yobs/(1-pz) - x*yobs/pz)
+# regression estimator
+ace.reg <- -lm(yobs ~ x + pz)$coef[2]
+print(c(acehat,ace.str,ace.ipw,ace.reg))
+# -1.8005937 -0.9981085 -0.9905824 -0.9984609
+```
+
+
+```{r}
+set.seed(13)
+n <- 10000
+#Simulate
+z <- rbinom(n,1,0.5) # generate covariate
+x <- rbinom(n,1,0.2) # randomly assign treatment
+prob.y <- expit(3.17+2.0836*x-7.35486*z)  # logit model with no Z*X term
+y <- rbinom(n,1,prob.y)
+fit.x <- glm(y~x,family=binomial)
+summary(fit.x)
+#            Estimate  Std. Error
+# x          0.23001    0.05010
+exp(coef(fit.x)[2])
+# Odds ratio relating X and Y is approx 1.2
+fit.xz <- glm(y~x+z,family=binomial)
+summary(fit.xz)
+#            Estimate  Std. Error
+# x          2.07686    0.15124     (95% CI contains 2.08)
+exp(coef(fit.xz)[2])
+# Odds ratio relating X and Y given Z is approx 8  (!)
+```
+
