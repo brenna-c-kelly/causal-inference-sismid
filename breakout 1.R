@@ -2,6 +2,7 @@
 # Robins Manski Bounds
 
 # estimate bounds based on observed data
+# imputing worst-case and best-case scenarios
 
 # Upper
 # E[Y(0) | X = 0]

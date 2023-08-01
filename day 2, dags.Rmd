@@ -1,0 +1,58 @@
+---
+title: "Untitled"
+author: "Brenna Kelly"
+date: "2023-07-25"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r warning=FALSE, message=FALSE}
+library(tidyverse)
+# library(broom)
+library(patchwork)
+library(scales)
+library(dagitty)
+library(ggdag)
+library(latex2exp)  # Easily convert LaTeX into arcane plotmath expressions
+library(ggtext)     # Use markdown in ggplot labels
+
+# Create a cleaner serifed theme to use throughout
+theme_do_calc <- function() {
+  theme_dag(base_family = "Times New Roman") +
+    theme(plot.title = element_text(size = rel(1.5)),
+          plot.subtitle = element_markdown())
+}
+
+# Make all geom_dag_text() layers use these settings automatically
+update_geom_defaults(ggdag:::GeomDagText, list(family = "Times New Roman", 
+                                               fontface = "bold",
+                                               color = "black"))
+```
+
+## Model 1
+
+Model linking:
+
+- climate 
+- agriculture
+- population
+- resource availability
+- resource ownership
+
+```{r}
+fof_dag <- dagify(avail ~ density,
+                  own ~ avail,
+                  agri ~ climate + avail + own,
+                  coords = list(x = c(climate = 1, density = 2, 
+                                      avail = 2, own = 3,
+                                      agri = 2),
+                                y = c(climate = 3, density = 3, 
+                                      avail = 2, own = 2,
+                                      agri = 1)))
+
+ggdag(fof_dag) +
+  theme_dag()
+```
